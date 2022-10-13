@@ -20,20 +20,19 @@ import TabList from "./components/TabList"
 
 function App() {
 
-    const [files, setFiles] = useState(defaultFiles)
+    const [files, setFiles] = useState(flattenArr(defaultFiles))
     const [isOnComposition, setIsOnComposition] = useState(false)
     const [activeFileID, setActiveFileID] = useState('')
     const [opendFileIDs, setOpenFileIDs] = useState([])
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
     const [ searchedFiles, setSearchedFiles ] = useState([])
-    // const filesArr = objToArr(files)
+    const filesArr = objToArr(files)
 
     const openedFiles = opendFileIDs.map(openID => {
-        return files.find(file => file.id === openID)
+        return files[openID]
     })
-    const activeFile = files.find(file => file.id === activeFileID)
-    // const activeFile = files[activeFileID]
-    let   fileListArr = searchedFiles.length > 0 ? searchedFiles : files
+    const activeFile = files[activeFileID]
+    let   fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr
     const fileClick = (id) => {
 
         setActiveFileID(id)
@@ -70,15 +69,9 @@ function App() {
 
     const fileChange = (id, value) => {
         if (!isOnComposition){
-            const newFiles = files.map(file => {
-                if (file.id === id){
-                    file.body = value
-                }
-                return file
-            })
-            setFiles(newFiles)
-            // const newFile = { ...files[id], body: value }
-            // setFiles({ ...files, [id]: newFile })
+            const newFile = { ...files[id], body: value }
+
+            setFiles({ ...files, [id]: newFile })
             //更新未保存的文档ID
             if (!unsavedFileIDs.includes(id)) {
                 setUnsavedFileIDs([...unsavedFileIDs, id])
@@ -86,28 +79,18 @@ function App() {
         }
     }
     const deleteFile = (id) => {
-        const newFiles = files.filter(function (file){return file.id !== id})
-        // delete files[id]
-        setFiles(newFiles)
+        delete files[id]
+        setFiles(files)
         tabClose(id)
     }
     const updateFileName = (id,title) => {
 
-
-        const newFiles = files.map(file =>{
-            if (file.id === id){
-                file.title = title
-                file.isNew = false
-            }
-            return file
-        })
-        setFiles(newFiles)
-        // const modifiedFile = { ...files[id], title, isNew: false }
-        // setFiles({ ...files, [id]: modifiedFile })
+        const modifiedFile = { ...files[id], title, isNew: false }
+        setFiles({ ...files, [id]: modifiedFile })
     }
     const fileSearch = (keyword) =>{
         if (keyword){
-            const newFiles = files.filter(function (file){return file.title.includes(keyword)})
+            const newFiles = filesArr.filter(function (file){return file.title.includes(keyword)})
             setSearchedFiles(newFiles)
         }else{
             setSearchedFiles([])
@@ -116,18 +99,14 @@ function App() {
     }
     const createNewFile = () => {
         const newId = uuidv4()
-        const newFiles = [
-            ...files,
-            {
-                id: newId,
-                title: '',
-                body: '## 请输入MarkDown文档',
-                createAt: new Date().getTime(),
-                isNew: true
-            }
-        ]
-        setFiles(newFiles)
-        // setFiles({...files,[newId]:newFiles})
+        const newFile = {
+            id: newId,
+            title: '',
+            body: '## 请输入MarkDown文档',
+            createAt: new Date().getTime(),
+            isNew: true
+        }
+        setFiles({...files,[newId]:newFile})
     }
     return (<div className="App container-fluid px-0">
             <div className="row no-gutters">

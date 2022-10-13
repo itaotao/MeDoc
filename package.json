@@ -16,6 +16,7 @@
     "bootstrap": "^5.2.1",
     "bootstrap-icons": "^1.9.1",
     "classnames": "^2.3.2",
+    "electron-store": "^8.1.0",
     "marked": "^4.1.1",
     "node-sass": "^7.0.3",
     "prop-types": "^15.8.1",

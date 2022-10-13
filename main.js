@@ -2,6 +2,9 @@ const {app,BrowserWindow} = require('electron')
 const isDev = require('electron-is-dev')
 // 初始化
 require('@electron/remote/main').initialize()
+const Store = require('electron-store');
+// 初始化Store
+Store.initRenderer();
 let mainWindow;
 app.on('ready',() => {
     mainWindow = new BrowserWindow({

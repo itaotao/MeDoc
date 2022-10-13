@@ -11,27 +11,41 @@ import {flattenArr,objToArr} from "./ultils/helper";
 import fileHelper from "./ultils/fileHelper";
 
 import FileSearch from "./components/FileSearch"
-import defaultFiles from "./ultils/defaultFiles"
 import FileList from "./components/FileList"
 import BottomBtn from "./components/BottomBtn"
 import TabList from "./components/TabList"
 
+
 const {join} = window.require('path')
 const remote = window.require("@electron/remote")
-
+const Store = window.require('electron-store')
+const fileStore = new Store({'name':'Files Data'})
+const saveFilesToStore = (files) => {
+    const filesStoreObj = objToArr(files).reduce((result,file) => {
+        const { id, path, title, createdAt } = file
+        result[id] = {
+            id,
+            path,
+            title,
+            createdAt
+        }
+        return result
+    },{})
+    fileStore.set('files',filesStoreObj)
+}
 function App() {
 
-    const [files, setFiles] = useState(flattenArr(defaultFiles))
+    const [files, setFiles] = useState(fileStore.get('files') || {})
     const [isOnComposition, setIsOnComposition] = useState(false)
     const [activeFileID, setActiveFileID] = useState('')
-    const [opendFileIDs, setOpenFileIDs] = useState([])
+    const [openedFileIDs, setOpenFileIDs] = useState([])
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
     const [ searchedFiles, setSearchedFiles ] = useState([])
     const filesArr = objToArr(files)
     const savedLocation = remote.app.getPath('documents')
 
 
-    const openedFiles = opendFileIDs.map(openID => {
+    const openedFiles = openedFileIDs.map(openID => {
         return files[openID]
     })
     const activeFile = files[activeFileID]
@@ -39,10 +53,16 @@ function App() {
     const fileClick = (id) => {
 
         setActiveFileID(id)
+        const currentFile = files[id]
+        if (!currentFile.isLoaded) {
+            fileHelper.readFile(currentFile.path).then( value => {
+                const newFile = { ...files[id],body:value,isLoaded:true }
+                setFiles({ ...files,[id]:newFile } )
+            })
+        }
+        if (!openedFileIDs.includes(id)) {
 
-        if (!opendFileIDs.includes(id)) {
-
-            setOpenFileIDs([...opendFileIDs, id])
+            setOpenFileIDs([...openedFileIDs, id])
         }
 
     }
@@ -52,7 +72,7 @@ function App() {
     }
     const tabClose = (id) => {
         //id = id - 1
-        const tabsWithout = opendFileIDs.filter(fileID => fileID !== id)
+        const tabsWithout = openedFileIDs.filter(fileID => fileID !== id)
         setOpenFileIDs(tabsWithout)
         if (tabsWithout.length > 0) {
             setActiveFileID(tabsWithout[0])
@@ -82,22 +102,30 @@ function App() {
         }
     }
     const deleteFile = (id) => {
+        if( files[id].title !== '' ){
+            fileHelper.deleteFile(files[id].path).then( () => {
+                saveFilesToStore(files)
+            })
+        }
         delete files[id]
         setFiles(files)
         tabClose(id)
     }
     const updateFileName = (id, title, isNew) => {
         const newPath = join(savedLocation,`${title}.md`)
-        const modifiedFile = { ...files[id], title, isNew: false }
+        const modifiedFile = { ...files[id], title, isNew: false, path: newPath}
+        const newFiles = { ...files, [id]: modifiedFile }
         if (isNew){
             fileHelper.writeFile(newPath,files[id].body).then( ()=>{
-                setFiles({ ...files, [id]: modifiedFile })
-
+                setFiles(newFiles)
+                saveFilesToStore(newFiles)
             })
         }else{
+
             const oldPath = join(savedLocation,`${files[id].title}.md`)
             fileHelper.renameFile(oldPath,newPath).then(()=>{
-                setFiles({ ...files, [id]: modifiedFile })
+                setFiles( newFiles)
+                saveFilesToStore(newFiles)
                 }
             )
         }

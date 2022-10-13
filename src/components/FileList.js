@@ -37,6 +37,7 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
         }
     },[enterPressed,editStatus,escPressed])
     useEffect(() => {
+
         const newFile = files.find(file=>file.isNew)
         if(newFile){
             setEditStatus(newFile.id)
@@ -84,7 +85,7 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
                                 <button
                                     type="button"
                                     className="icon-button col-2 border-0 border-bottom border-3 bg-white border-danger"
-                                    onClick={closeEdit}
+                                    onClick={()=>{closeEdit(file)}}
                                 >
                                     <FontAwesomeIcon
                                         title="关闭"

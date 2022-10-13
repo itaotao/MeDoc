@@ -5,15 +5,6 @@ export const flattenArr = (arr) => {
     }, {})
 }
 
-// export const objToArr = (obj) => {
-//     // return Object.keys(obj).map(key => obj[key])
-//     let arr = [];
-//     for(let i in obj) {
-//         i = parseInt(i)
-//         arr[i+1] = obj[i]
-//     }
-//     return arr
-// }
 export const objToArr = (obj) => {
     return Object.keys(obj).map(key => obj[key])
 }

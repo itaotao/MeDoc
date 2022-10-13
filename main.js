@@ -1,5 +1,7 @@
 const {app,BrowserWindow} = require('electron')
 const isDev = require('electron-is-dev')
+// 初始化
+require('@electron/remote/main').initialize()
 let mainWindow;
 app.on('ready',() => {
     mainWindow = new BrowserWindow({
@@ -28,4 +30,5 @@ app.on('ready',() => {
         // 但这次不是。
         mainWindow = null;
     });
+    require('@electron/remote/main').enable(mainWindow.webContents)
 })

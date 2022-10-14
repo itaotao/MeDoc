@@ -102,14 +102,25 @@ function App() {
         }
     }
     const deleteFile = (id) => {
-        if( files[id].title !== '' ){
+        // if( files[id].title !== '' ){
+        //     fileHelper.deleteFile(files[id].path).then( () => {
+        //         saveFilesToStore(files)
+        //     })
+        // }
+        // delete files[id]
+        // setFiles(files)
+        // tabClose(id)
+        if(files[id].isNew){
+            const { [id] : value, ...afterDelete } = files
+            setFiles(afterDelete)
+        } else {
             fileHelper.deleteFile(files[id].path).then( () => {
+                const { [id] : value, ...afterDelete } = files
+                setFiles(afterDelete)
                 saveFilesToStore(files)
+                tabClose(id)
             })
         }
-        delete files[id]
-        setFiles(files)
-        tabClose(id)
     }
     const updateFileName = (id, title, isNew) => {
         const newPath = join(savedLocation,`${title}.md`)
@@ -156,6 +167,18 @@ function App() {
             setUnsavedFileIDs(unsavedFileIDs.filter(id => id !== activeFile.id))
         })
     }
+    const importFiles = () =>{
+        remote.dialog.showOpenDialog({
+            title : "请选择MarkDown文件",
+            properties : ['openFile','multiSelections'],
+            filters : [
+                { name : 'MarkDown文件',extensions : ['md']}
+            ]
+
+        }).then( (paths)=>{
+            console.log(paths)
+        })
+    }
     return (<div className="App container-fluid px-0">
             <div className="row no-gutters">
                 <div className="col-3  left-panel ">
@@ -181,7 +204,7 @@ function App() {
                             text="导入"
                             colorClass="btn-success"
                             icon={faFileImport}
-
+                            onBtnClick={importFiles}
                         />
 
                     </div>

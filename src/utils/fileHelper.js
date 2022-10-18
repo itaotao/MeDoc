@@ -12,7 +12,8 @@ const fileHelper = {
     },
     deleteFile: (path) => {
         return fs.unlink(path)
-    }
+    },
+
 }
 // const  testPath =   path.join(__dirname,'helper.js')
 // const  testWritePath =   path.join(__dirname,'helper.md')

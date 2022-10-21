@@ -1,4 +1,3 @@
-const fs = window.require('fs')
 export const flattenArr = (arr) => {
     return arr.reduce((map, item) => {
         map[item.id] = item
@@ -27,22 +26,6 @@ export const timestampToString = (timestamp) => {
     const date = new Date(timestamp)
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
 }
-export const existFile = (path)=>{
-
-    // return  fs.access(path,function (err){
-    //     // log(!err)
-    // }).then(function (err){
-    //     // console.log(err)
-    // })
-    // console.log(msg)
-try {
-   fs.open(path);
-
-}catch (err){
-    if (err){
-        console.log('err')
-    }
-}
 
 
-}
+

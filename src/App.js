@@ -3,8 +3,10 @@ import 'easymde/dist/easymde.min.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 import React, { useState} from "react"
-import {faPlus, faFileImport, faSave} from '@fortawesome/free-solid-svg-icons'
-import SimpleMde from "react-simplemde-editor"
+import {faPlus, faFileImport} from '@fortawesome/free-solid-svg-icons'
+import MdEditor from 'react-markdown-editor-lite';
+// 导入编辑器的样式
+import 'react-markdown-editor-lite/lib/index.css';
 import {marked} from "marked"
 import { v4 as uuidv4 } from 'uuid';
 import { flattenArr, objToArr} from "./utils/helper";
@@ -15,6 +17,9 @@ import FileSearch from "./components/FileSearch"
 import FileList from "./components/FileList"
 import BottomBtn from "./components/BottomBtn"
 import TabList from "./components/TabList"
+import useIpcRenderer from "./hooks/useIpcRenderer";
+
+
 
 
 const {join,basename,extname,dirname} = window.require('path')
@@ -38,9 +43,8 @@ const saveFilesToStore = (files) => {
 }
 
 function App() {
-
+    const mdEditor = React.useRef(null);
     const [files, setFiles] = useState(fileStore.get('files') || {})
-    const [isOnComposition, setIsOnComposition] = useState(false)
     const [activeFileID, setActiveFileID] = useState('')
     const [openedFileIDs, setOpenFileIDs] = useState([])
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
@@ -105,18 +109,10 @@ function App() {
         }
     }
 
-
-    const onCompositionStart = ()=>{
-        setIsOnComposition(true)
-
-    }
-    const onCompositionEnd = () =>{
-        setIsOnComposition(false)
-    }
-
-    const fileChange = (id, value) => {
-        if (!isOnComposition){
-            const newFile = { ...files[id], body: value }
+    const handleEditorChange = ({ html, text }) => {
+        let id = activeFileID
+        if ( text !== files[id].body){
+            const newFile = { ...files[id], body: text }
 
             setFiles({ ...files, [id]: newFile })
             //更新未保存的文档ID
@@ -124,7 +120,7 @@ function App() {
                 setUnsavedFileIDs([...unsavedFileIDs, id])
             }
         }
-    }
+    };
     const deleteFile = (id) => {
         // if( files[id].title !== '' ){
         //     fileHelper.deleteFile(files[id].path).then( () => {
@@ -233,20 +229,13 @@ function App() {
             }
         })
     }
-    // useEffect(() => {
-    //     filesArr.forEach(function(v,i){
-    //
-    //         fs.access(v['path'],function (err){
-    //             if (err){
-    //                 delete filesArr[i]
-    //                 delete files[v['id']]
-    //                 saveFilesToStore(files)
-    //                 setFiles(files)
-    //             }
-    //         })
-    //
-    //     })
-    // })
+
+    useIpcRenderer({
+        'create-new-file' : createNewFile,
+        'import-file'     : importFiles,
+        'save-edit-file'  : onSaveClick,
+    })
+
     return (<div className="App container-fluid px-0">
             <div className="row no-gutters">
                 <div className="col-3  left-panel ">
@@ -258,24 +247,6 @@ function App() {
                               onFileDelete={deleteFile}
                               onSaveEdit={updateFileName}
                     />
-                    <div className="row no-gutters button-group ">
-
-                        <BottomBtn
-                            text="新建"
-                            colorClass="btn-primary"
-                            icon={faPlus}
-                            onBtnClick={createNewFile}
-                        />
-
-
-                        <BottomBtn
-                            text="导入"
-                            colorClass="btn-success"
-                            icon={faFileImport}
-                            onBtnClick={importFiles}
-                        />
-
-                    </div>
                 </div>
                 <div className="col-9  right-panel">
                     {!activeFile && <div className="start-page align-self-center">
@@ -291,34 +262,14 @@ function App() {
                             onTabClick={tabClick}
                             onCloseTab={tabClose}
                         />
-                        <SimpleMde
-                            id="mardown-editor"
-                            key={activeFile.id}
-                            value={activeFile && activeFile.body}
-                            onCompositionStart={onCompositionStart}
-                            onCompositionEnd={onCompositionEnd}
-                            onChange={(value)=>{fileChange(activeFile.id,value)}}
-
-                            options={{
-                                previewRender: (plainText, preview) => { // Async method
-                                    setTimeout(() => {
-                                        preview.innerHTML = marked.parse(plainText)
-                                    });
-
-                                    return "Loading...";
-                                },
-                                placeholder: '请使用 Markdown 格式书写 ',
-                                autofocus: true,
-                                spellChecker: false,
-                                minHeight: '730px',
-                            }}
-
-                        />
-                        <BottomBtn
-                            text="保存"
-                            colorClass="btn-success pull-right "
-                            icon={faSave}
-                            onBtnClick={onSaveClick}
+                        <MdEditor
+                            ref={mdEditor}
+                            style={{ height: '500px' }}
+                            value={  activeFile.body }
+                            placeholder= {'请使用 Markdown 格式书写 '}
+                            view = {{ menu: true, md: true, html: false }}
+                            renderHTML={text => marked.parse(text)}
+                            onChange={handleEditorChange}
                         />
                     </>}
 

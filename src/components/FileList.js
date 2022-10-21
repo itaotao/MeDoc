@@ -123,11 +123,34 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
                             </>
                         }
                         {
-                            ((file.id === editStatus) || file.isNew ) &&
+                            ((file.id === editStatus) && !files.isNew ) &&
                             <>
                                 <input
                                     className="border-0 border-bottom border-3 border-grey rounded-0 col-10 "
                                     value={value}
+                                    ref={node}
+                                    onChange={(e) => {
+                                        setValue(e.target.value)
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    className="icon-button col-2 border-0 border-bottom border-3 bg-white border-danger"
+                                    onClick={()=>{closeEdit(file)}}
+                                >
+                                    <FontAwesomeIcon
+                                        title="关闭"
+                                        size="lg"
+                                        icon={faClose}
+                                    />
+                                </button>
+                            </>
+                        }
+                        {
+                            ((file.id !== editStatus) && file.isNew ) &&
+                            <>
+                                <input
+                                    className="border-0 border-bottom border-3 border-grey rounded-0 col-10 "
                                     ref={node}
                                     placeholder={"请输入文档标题"}
                                     onChange={(e) => {

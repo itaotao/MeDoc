@@ -1,5 +1,6 @@
-const {app,BrowserWindow} = require('electron')
+const {app,BrowserWindow,Menu} = require('electron')
 const isDev = require('electron-is-dev')
+const menuTemplate = require('./src/menuTemplate')
 // 初始化
 require('@electron/remote/main').initialize()
 const Store = require('electron-store');
@@ -19,6 +20,9 @@ app.on('ready',() => {
     const urlLocation = isDev ? 'http://localhost:3000' : 'http://baidu.com'
     mainWindow.loadURL(urlLocation)
     mainWindow.webContents.openDevTools({mode:'bottom'});
+    // set the menu
+    let menu = Menu.buildFromTemplate(menuTemplate)
+    Menu.setApplicationMenu(menu)
     app.on('window-all-closed', function() {
         // 在 OS X 上，通常用户在明确地按下 Cmd + Q 之前
         // 应用会保持活动状态
@@ -34,4 +38,5 @@ app.on('ready',() => {
         mainWindow = null;
     });
     require('@electron/remote/main').enable(mainWindow.webContents)
+
 })

@@ -15,11 +15,6 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
     const enterPressed = useKeyPress(13)
     const escPressed = useKeyPress(27)
     let node = useRef(null)
-    const startEdit = (id,value) => {
-
-        setEditStatus(id)
-        setValue(value)
-    }
     const closeEdit = (editItem) => {
         //e.preventDefault()
         setEditStatus(false)

@@ -20,6 +20,7 @@ import useIpcRenderer from "./hooks/useIpcRenderer";
 
 
 
+
 const {join,basename,extname,dirname} = window.require('path')
 const remote = window.require("@electron/remote")
 const Store = window.require('electron-store')
@@ -49,8 +50,8 @@ function App() {
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
     const [ searchedFiles, setSearchedFiles ] = useState([])
     const filesArr = objToArr(files)
-    const savedLocation = settingsStore.get('savedFileLocation') || remote.app.getPath('documents')
-
+    const savedLocation = settingsStore.get('savedFileLocation').toString() || remote.app.getPath('documents')
+    console.log(settingsStore.get('savedFileLocation'))
     const openedFiles = openedFileIDs.map(openID => {
         return files[openID]
     })
@@ -142,6 +143,7 @@ function App() {
         }
     }
     const updateFileName = (id, title, isNew) => {
+
         const newPath = isNew ? join(savedLocation, `${title}.md`)
             : join(dirname(files[id].path), `${title}.md`)
         const modifiedFile = { ...files[id], title, isNew: false, path: newPath}

@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }).then((path) => {
 
       if (path.canceled === false) {
-        $('#savedFileLocation').value = path.filePaths
-        savedLocation = path.filePaths
+        $('#savedFileLocation').value = path.filePaths.toString()
+        savedLocation = path.filePaths.toString()
       }
 
     })

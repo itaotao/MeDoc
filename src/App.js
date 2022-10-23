@@ -1,12 +1,11 @@
 import './App.css'
-import 'easymde/dist/easymde.min.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
-
-import React, { useState} from "react"
-import {faPlus, faFileImport} from '@fortawesome/free-solid-svg-icons'
-import MdEditor from 'react-markdown-editor-lite';
 // 导入编辑器的样式
 import 'react-markdown-editor-lite/lib/index.css';
+
+import React, { useState} from "react"
+import MdEditor from 'react-markdown-editor-lite';
+
 import {marked} from "marked"
 import { v4 as uuidv4 } from 'uuid';
 import { flattenArr, objToArr} from "./utils/helper";
@@ -15,7 +14,6 @@ import fileHelper from "./utils/fileHelper";
 
 import FileSearch from "./components/FileSearch"
 import FileList from "./components/FileList"
-import BottomBtn from "./components/BottomBtn"
 import TabList from "./components/TabList"
 import useIpcRenderer from "./hooks/useIpcRenderer";
 
@@ -26,6 +24,7 @@ const {join,basename,extname,dirname} = window.require('path')
 const remote = window.require("@electron/remote")
 const Store = window.require('electron-store')
 const fileStore = new Store({'name':'Files Data'})
+const settingsStore = new Store({ name: 'Settings'})
 const saveFilesToStore = (files) => {
     const filesStoreObj = objToArr(files).reduce((result,file) => {
 
@@ -50,7 +49,7 @@ function App() {
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
     const [ searchedFiles, setSearchedFiles ] = useState([])
     const filesArr = objToArr(files)
-    const savedLocation = remote.app.getPath('documents')
+    const savedLocation = settingsStore.get('savedFileLocation') || remote.app.getPath('documents')
 
     const openedFiles = openedFileIDs.map(openID => {
         return files[openID]

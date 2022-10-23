@@ -46,30 +46,18 @@ let template = [{
                 label: '剪切',
                 accelerator: 'CmdOrCtrl+X',
                 role:'cut',
-                click: (menuItem, browserWindow, event) => {
-                    browserWindow.webContents.send('cut')
-                }
             }, {
                 label: '复制',
                 accelerator: 'CmdOrCtrl+C',
                 role:'copy',
-                click: (menuItem, browserWindow, event) => {
-                    browserWindow.webContents.send('copy')
-                }
             }, {
                 label: '粘贴',
                 accelerator: 'CmdOrCtrl+V',
                 role:'paste',
-                click: (menuItem, browserWindow, event) => {
-                    browserWindow.webContents.send('paste')
-                }
             }, {
                 label: '全选',
                 accelerator: 'CmdOrCtrl+A',
                 role: 'selectAll',
-                click: (menuItem, browserWindow, event) => {
-                    browserWindow.webContents.send('select-all')
-                }
             }
         ]
     },

@@ -8,10 +8,10 @@ import MdEditor from 'react-markdown-editor-lite';
 
 import {marked} from "marked"
 import { v4 as uuidv4 } from 'uuid';
-import { flattenArr, objToArr} from "./utils/helper";
+import { flattenArr, objToArr, timestampToString} from "./utils/helper";
 import fileHelper from "./utils/fileHelper";
 
-
+import Loader from './components/Loader'
 import FileSearch from "./components/FileSearch"
 import FileList from "./components/FileList"
 import TabList from "./components/TabList"
@@ -22,20 +22,23 @@ import useIpcRenderer from "./hooks/useIpcRenderer";
 
 
 const {join,basename,extname,dirname} = window.require('path')
+const { ipcRenderer } = window.require('electron')
 const remote = window.require("@electron/remote")
 const Store = window.require('electron-store')
 const fileStore = new Store({'name':'Files Data'})
-const settingsStore = new Store({ name: 'Settings'})
+const settingsStore = new Store({ 'name': 'Settings'})
+const getAutoSync = () => ['accessKey', 'secretKey', 'bucket'].every(key => !!settingsStore.get('qiniuConfig')[key]) && settingsStore.get('enableAutoSync')
 const saveFilesToStore = (files) => {
     const filesStoreObj = objToArr(files).reduce((result,file) => {
 
-        const { id, path, title, createdAt } = file
-
+        const { id, path, title, createdAt, isSynced, updatedAt } = file
         result[id] = {
             id,
             path,
             title,
-            createdAt
+            createdAt,
+            isSynced,
+            updatedAt
         }
         return result
     },{})
@@ -45,13 +48,14 @@ const saveFilesToStore = (files) => {
 function App() {
     const mdEditor = React.useRef(null);
     const [files, setFiles] = useState(fileStore.get('files') || {})
+    const [ isLoading, setLoading ] = useState(false)
     const [activeFileID, setActiveFileID] = useState('')
     const [openedFileIDs, setOpenFileIDs] = useState([])
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
     const [ searchedFiles, setSearchedFiles ] = useState([])
     const filesArr = objToArr(files)
     const savedLocation = settingsStore.get('savedFileLocation').toString() || remote.app.getPath('documents')
-    console.log(settingsStore.get('savedFileLocation'))
+
     const openedFiles = openedFileIDs.map(openID => {
         return files[openID]
     })
@@ -59,11 +63,15 @@ function App() {
 
     let   fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr
 
-    const fileClick = (id) => {
+    const fileClick = (fileID) => {
 
-        setActiveFileID(id)
-        const currentFile = files[id]
-        if (!currentFile.isLoaded) {
+        setActiveFileID(fileID)
+        const currentFile = files[fileID]
+        const { id, title, path, isLoaded } = currentFile
+        if (!isLoaded) {
+            if (getAutoSync()) {
+                ipcRenderer.send('download-file', { key: `${title}.md`, path, id })
+            } else {
                 fileHelper.readFile(currentFile.path).then( value => {
                     const newFile = { ...files[id],body:value,isLoaded:true }
                     setFiles({ ...files,[id]:newFile } )
@@ -89,10 +97,10 @@ function App() {
                         })
                     }
                 })
-        }
-        if (!openedFileIDs.includes(id)) {
+        }}
+        if (!openedFileIDs.includes(fileID)) {
 
-            setOpenFileIDs([...openedFileIDs, id])
+            setOpenFileIDs([...openedFileIDs, fileID])
         }
 
     }
@@ -122,23 +130,23 @@ function App() {
         }
     };
     const deleteFile = (id) => {
-        // if( files[id].title !== '' ){
-        //     fileHelper.deleteFile(files[id].path).then( () => {
-        //         saveFilesToStore(files)
-        //     })
-        // }
-        // delete files[id]
-        // setFiles(files)
-        // tabClose(id)
         if(files[id].isNew){
             const { [id] : value, ...afterDelete } = files
             setFiles(afterDelete)
         } else {
             fileHelper.deleteFile(files[id].path).then( () => {
                 const { [id] : value, ...afterDelete } = files
+                if (getAutoSync()){
+                    ipcRenderer.send('delete-file', { key: `${files[id].title}.md` })
+                }
                 setFiles(afterDelete)
-                saveFilesToStore(files)
+                saveFilesToStore(afterDelete)
                 tabClose(id)
+                remote.dialog.showMessageBox({
+                    type: 'info',
+                    title: '删除成功',
+                    message: `删除成功`
+                }).then( )
             })
         }
     }
@@ -158,6 +166,9 @@ function App() {
             // const oldPath = join(savedLocation,`${files[id].title}.md`)
             const oldPath = files[id].path
             fileHelper.renameFile(oldPath,newPath).then(()=>{
+                if (getAutoSync()){
+                    ipcRenderer.send('rename-file', { key: `${files[id].title}.md`,desKey: `${newFiles[id].title}.md`})
+                }
                 setFiles( newFiles)
                 saveFilesToStore(newFiles)
                 }
@@ -186,9 +197,13 @@ function App() {
         setFiles({...files,[newId]:newFile})
     }
     const onSaveClick = () => {
-        fileHelper.writeFile(activeFile.path,activeFile.body).then( () => {
+        const {title, path, body } = activeFile
+        fileHelper.writeFile(path,body).then( () => {
             setUnsavedFileIDs(unsavedFileIDs.filter(id => id !== activeFile.id))
         })
+        if (getAutoSync()) {
+            ipcRenderer.send('upload-file', {key: `${title}.md`, path })
+        }
     }
     const importFiles = () =>{
         remote.dialog.showOpenDialog({
@@ -207,7 +222,6 @@ function App() {
                     })
                     return !addFiles
                 })
-                console.log(filteredPaths)
                 const importFilesArr = filteredPaths.map(path => {
                     return {
                         id: uuidv4(),
@@ -230,14 +244,70 @@ function App() {
             }
         })
     }
+    const activeFileUploaded = () => {
+        const { id } = activeFile
+        const modifiedFile = { ...files[id], isSynced: true, updatedAt: new Date().getTime() }
+        const newFiles = { ...files, [id]: modifiedFile }
+        setFiles(newFiles)
+        saveFilesToStore(newFiles)
+    }
+    const activeFileDownloaded = (event, message) => {
+        const currentFile = files[message.id]
+        const { id, path } = currentFile
+        fileHelper.readFile(path).then(value => {
+            let newFile
+            if (message.status === 'download-success') {
+                newFile = { ...files[id], body: value, isLoaded: true, isSynced: true, updatedAt: new Date().getTime() }
+            } else {
+                newFile = { ...files[id], body: value, isLoaded: true}
+            }
 
+            const newFiles = { ...files, [id]: newFile }
+            setFiles(newFiles)
+            saveFilesToStore(newFiles)
+        })
+    }
+    const filesUploaded = () => {
+        const newFiles = objToArr(files).reduce((result, file) => {
+            const currentTime = new Date().getTime()
+            result[file.id] = {
+                ...files[file.id],
+                isSynced: true,
+                updatedAt: currentTime,
+            }
+            return result
+        }, {})
+        setFiles(newFiles)
+        saveFilesToStore(newFiles)
+    }
+    const allFileDownload = (event,arr,qiniuFile) =>{
+            setFiles(qiniuFile)
+            saveFilesToStore(qiniuFile)
+        if(objToArr(arr).length > 0){
+            remote.dialog.showMessageBox({
+                type: 'info',
+                title: '下载文件成功',
+                message: `成功下载${objToArr(arr).length}个文件`
+            })
+        }
+
+    }
     useIpcRenderer({
         'create-new-file' : createNewFile,
         'import-file'     : importFiles,
         'save-edit-file'  : onSaveClick,
+        'active-file-uploaded': activeFileUploaded,
+        'file-downloaded' : activeFileDownloaded,
+        'download-all-file' : allFileDownload,
+        'files-uploaded'  : filesUploaded,
+        'delete-file'     : deleteFile,
+        'loading-status': (message, status) => { setLoading(status) }
     })
 
     return (<div className="App container-fluid px-0">
+        { isLoading &&
+            <Loader />
+        }
             <div className="row no-gutters">
                 <div className="col-3  left-panel ">
                     <b><FileSearch title={"全部文档"}
@@ -272,6 +342,9 @@ function App() {
                             renderHTML={text => marked.parse(text)}
                             onChange={handleEditorChange}
                         />
+                        { activeFile.isSynced &&
+                            <span className="sync-status">已同步，上次同步{timestampToString(activeFile.updatedAt)}</span>
+                        }
                     </>}
 
                 </div>

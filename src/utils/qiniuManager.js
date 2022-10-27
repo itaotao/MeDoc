@@ -1,6 +1,7 @@
 const qiniu = require('qiniu')
 const axios = require('axios')
 const fs = require('fs')
+const http = require('http');
 class QiniuManager {
     constructor(accessKey, secretKey, bucket, zone = 'z0') {
         //generate mac
@@ -35,6 +36,27 @@ class QiniuManager {
             this.bucketManager.delete(this.bucket, key, this._handleCallback(resolve, reject))
         })
     }
+    moveFile(key,desKey){
+        // 强制覆盖已有同名文件
+        const options = {
+            force: true
+        }
+        return new Promise((resolve, reject) => {
+            this.bucketManager.move(this.bucket,key,this.bucket,desKey,options,this._handleCallback(resolve, reject))
+        })
+    }
+
+    getFileList(options = {}) {
+        if (!options){
+            options = {
+                limit: 2,
+                prefix: '/',
+            }
+        }
+        return new Promise((resolve, reject) => {
+            this.bucketManager.listPrefix(this.bucket,options,this._handleCallback(resolve, reject))
+        })
+    }
     getBucketDomain() {
         const reqURL = `http://api.qiniu.com/v6/domain/list?tbl=${this.bucket}`
         const digest = qiniu.util.generateAccessToken(this.mac, reqURL)
@@ -65,25 +87,37 @@ class QiniuManager {
             }
         })
     }
-    downloadFile(key, downloadPath) {
-        return this.generateDownloadLink(key).then(link => {
-            const timeStamp = new Date().getTime()
-            const url = `${link}?timestamp=${timeStamp}`
-            return axios({
-                url,
-                method: 'GET',
-                responseType: 'stream',
-                headers: {'Cache-Control': 'no-cache'}
+    downloadFile(key, dest) {
+        const timeStamp = new Date().getTime()
+        return new Promise((resolve, reject)=>{
+            // 确保dest路径存在
+            const file = fs.createWriteStream(dest);
+            this.generateDownloadLink(key).then(uri => {
+                uri = `${uri}?timestamp=${timeStamp}`
+                http.get(uri, (res)=>{
+                    if(res.statusCode !== 200){
+                        reject(res.statusCode);
+                        return;
+                    }
+
+                    res.on('end', ()=>{
+                        console.log('download end');
+                    });
+
+                    // 进度、超时等
+
+                    file.on('finish', ()=>{
+                        console.log('finish write file')
+                        file.close(resolve);
+                    }).on('error', (err)=>{
+                        fs.unlink(dest);
+                        reject(err.message);
+                    })
+
+                    res.pipe(file);
+                })
             })
-        }).then(response => {
-            const writer = fs.createWriteStream(downloadPath)
-            response.data.pipe(writer)
-            return new Promise((resolve, reject) => {
-                writer.on('finish', resolve)
-                writer.on('error', reject)
-            })
-        }).catch(err => {
-            return Promise.reject({ err: err.response })
+
         })
     }
     getZone(zone){
@@ -99,12 +133,7 @@ class QiniuManager {
     }
      checkUrl(strUrl) {
         let regular = /^\b(((https?|ftp):\/\/)?[-a-z0-9]+(\.[-a-z0-9]+)*\.(?:com|edu|gov|int|mil|net|org|biz|info|name|museum|asia|coop|aero|[a-z][a-z]|((25[0-5])|(2[0-4]\d)|(1\d\d)|([1-9]\d)|\d))\b(\/[-a-z0-9_:\@&?=+,.!\/~%\$]*)?)$/i
-        if (regular.test(strUrl)) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return regular.test(strUrl);
     }
     _handleCallback(resolve, reject) {
         return (respErr, respBody, respInfo) => {

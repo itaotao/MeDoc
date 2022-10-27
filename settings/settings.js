@@ -37,16 +37,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let accessKey =  $("#accessKey").value
     let secretKey = $("#secretKey").value
     let bucket =  $("#bucketName").value
-    if(accessKey && secretKey && bucket){
+    // if(accessKey && secretKey && bucket){
       let qiniuConfig = {
         'accessKey' : accessKey,
         'secretKey' : secretKey,
         'bucket'    : bucket
       }
       settingsStore.set('qiniuConfig',qiniuConfig)
-    }
+    // }
 
     settingsStore.set('savedFileLocation',savedLocation)
+    ipcRenderer.send('config-is-saved')
     remote.getCurrent().window.close()
   })
   $('.nav-tabs').addEventListener('click', (e) => {

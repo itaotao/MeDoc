@@ -2,7 +2,7 @@ const {app,ipcMain,Menu,dialog} = require('electron')
 const isDev = require('electron-is-dev')
 const menuTemplate = require('./src/menuTemplate')
 const AppWindow = require('./src/AppWindow')
-const {path,basename} = require('path')
+const path = require('path')
 const Store = require('electron-store')
 // 初始化Store
 Store.initRenderer()
@@ -14,9 +14,9 @@ const objToArr = (obj) => {
     return Object.keys(obj).map(key => obj[key])
 }
 // 热加载
-try {
-    require('electron-reloader')(module,{});
-} catch (_) {}
+// try {
+//     require('electron-reloader')(module,{});
+// } catch (_) {}
 // 初始化remote
 require('@electron/remote/main').initialize()
 // const {ipcMain} = require("@electron/remote");
@@ -34,16 +34,18 @@ app.on('ready',() => {
     const mainWindowConfig = {
         width : 1024,
         height : 768,
+        icon: path.join(__dirname,'./logo.png'),
         webPreferences : {
             nodeIntegration:true,
             enableRemoteModule:true,
-            contextIsolation:false
+            contextIsolation:false,
+            webSecurity: false
         }
     }
 
-    const urlLocation = isDev ? 'http://localhost:3000' : 'http://baidu.com'
+    const urlLocation = isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, '/index.html')}`
     mainWindow = new AppWindow(mainWindowConfig,urlLocation)
-    mainWindow.webContents.openDevTools({mode:'bottom'});
+    // mainWindow.webContents.openDevTools({mode:'bottom'});
     // set the menu
     let menu = Menu.buildFromTemplate(menuTemplate)
     Menu.setApplicationMenu(menu)
@@ -73,7 +75,7 @@ app.on('ready',() => {
                 contextIsolation:false
             }
         }
-        const settingsFileLocation = `file://${path.join(__dirname, './settings/settings.html')}`
+        const settingsFileLocation = `file://${path.join(__dirname, '../settings/settings.html')}`
         settingsWindow = new AppWindow(settingsWindowConfig, settingsFileLocation)
         // settingsWindow.webContents.openDevTools({mode:'bottom'});
         settingsWindow.removeMenu()
@@ -149,7 +151,7 @@ app.on('ready',() => {
     ipcMain.on('delete-file', (event, data) => {
         const manager = createManager()
         manager.deleteFile(data.key).then(data => {
-            console.log('上传成功', data)
+            console.log('删除成功', data)
         }).catch((err) => {
             console.log(err)
             dialog.showErrorBox('同步删除文档失败', '请检查七牛云参数是否正确')
@@ -178,34 +180,48 @@ app.on('ready',() => {
 
             const downPromiseArr = items.filter( item => {
 
-                objToArr(currentFilesObj).map(file => {
-                    if(item.key === `${file.title}.md` && Math.round(item.putTime / 10000) > file.updatedAt){
-                        downFileArr[file.id] = {
-                            'id' : file.id,
-                            'key' : item.key,
-                            'path' : file.path,
-                            'updatedAt' : Math.round(item.putTime / 10000),
-                            'isSynced' : true,
-                            'isInStore' : true
-                        }
-                    }else if (!getTitles.includes(item.key) ){
-                        const getNewTitles = objToArr(downFileArr).map(file => {
-                            return file.key
-                        })
-                        if (!getNewTitles.includes(item.key)){
-                            const newId = uuidv4()
+                if (getTitles.length === 0 ){
+                    const newId = uuidv4()
 
+                    downFileArr[newId] = {
+                        'id': newId,
+                        'key': item.key,
+                        'path': path.join(settingsStore.get('savedFileLocation'), `/${item.key}`),
+                        'updatedAt': Math.round(item.putTime / 10000),
+                        'isSynced': true,
+                        'isInStore': false
+                    }
+                }else{
+                    objToArr(currentFilesObj).map(file => {
+                        if (item.key === `${file.title}.md` && Math.round(item.putTime / 10000) > file.updatedAt) {
                             downFileArr[file.id] = {
-                                'id' : newId,
-                                'key' : item.key,
-                                'path' : settingsStore.get('savedFileLocation')+`\\${item.key}`,
-                                'updatedAt' : Math.round(item.putTime / 10000),
-                                'isSynced' : true,
-                                'isInStore' : false
+                                'id': file.id,
+                                'key': item.key,
+                                'path': file.path,
+                                'updatedAt': Math.round(item.putTime / 10000),
+                                'isSynced': true,
+                                'isInStore': true
+                            }
+                        } else if (!getTitles.includes(item.key)) {
+                            const getNewTitles = objToArr(downFileArr).map(file => {
+                                return file.key
+                            })
+                            if (!getNewTitles.includes(item.key)) {
+                                const newId = uuidv4()
+
+                                downFileArr[newId] = {
+                                    'id': newId,
+                                    'key': item.key,
+                                    'path': path.join(settingsStore.get('savedFileLocation'), `/${item.key}`),
+                                    'updatedAt': Math.round(item.putTime / 10000),
+                                    'isSynced': true,
+                                    'isInStore': false
+                                }
                             }
                         }
-                    }
-                })
+                    })
+                }
+
                 const getNewTitles = objToArr(downFileArr).map(file => {
                     return file.key
                 })
@@ -213,9 +229,9 @@ app.on('ready',() => {
             })
 
             objToArr(downFileArr).map(item => {
-              return   manager.downloadFile(item.key,item.path)
+                return  manager.downloadFile(item.key, item.path)
             })
-           return Promise.all(downPromiseArr)
+            return Promise.all(downPromiseArr)
         }).then( (arr) => {
 
             const finalFilesObj = objToArr(downFileArr).reduce((newFilesObj,qiniuFile) => {
@@ -232,7 +248,7 @@ app.on('ready',() => {
                     const newItem = {
                         id:qiniuFile.id,
                         path:qiniuFile.path,
-                        title:basename(qiniuFile.key,'md'),
+                        title:path.basename(qiniuFile.key,'.md'),
                         createAt: qiniuFile.updatedAt ,
                         isSynced: true,
                         updatedAt: qiniuFile.updatedAt

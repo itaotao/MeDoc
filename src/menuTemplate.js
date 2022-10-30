@@ -2,7 +2,7 @@
 const { app, shell, ipcMain, } = require('electron')
 const Store = require('electron-store')
 const settingsStore = new Store({ name: 'Settings'})
-const qiniuIsConfiged =  ['accessKey', 'secretKey', 'bucket'].every(key => !!settingsStore.get('qiniuConfig')[key])
+const qiniuIsConfiged = settingsStore.size>0 ? ['accessKey', 'secretKey', 'bucket'].every(key => !!settingsStore.get('qiniuConfig')[key]) : false
 let enableAutoSync = settingsStore.get('enableAutoSync')
 
 let template = [{

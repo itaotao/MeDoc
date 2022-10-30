@@ -27,7 +27,8 @@ const remote = window.require("@electron/remote")
 const Store = window.require('electron-store')
 const fileStore = new Store({'name':'Files Data'})
 const settingsStore = new Store({ 'name': 'Settings'})
-const getAutoSync = () => ['accessKey', 'secretKey', 'bucket'].every(key => !!settingsStore.get('qiniuConfig')[key]) && settingsStore.get('enableAutoSync')
+const getAutoSync = settingsStore.size > 0 ? (() => ['accessKey', 'secretKey', 'bucket'].every(key => !!settingsStore.get('qiniuConfig')[key]) && settingsStore.get('enableAutoSync'))
+    : () => {return false}
 const saveFilesToStore = (files) => {
     const filesStoreObj = objToArr(files).reduce((result,file) => {
 
@@ -54,7 +55,7 @@ function App() {
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
     const [ searchedFiles, setSearchedFiles ] = useState([])
     const filesArr = objToArr(files)
-    const savedLocation = settingsStore.get('savedFileLocation').toString() || remote.app.getPath('documents')
+    const savedLocation =  settingsStore.get('savedFileLocation') || remote.app.getPath('documents')
 
     const openedFiles = openedFileIDs.map(openID => {
         return files[openID]

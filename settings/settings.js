@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     settingsStore.set('savedFileLocation',savedLocation)
     ipcRenderer.send('config-is-saved')
-    remote.getCurrent().window.close()
+    remote.getCurrentWindow().close()
   })
   $('.nav-tabs').addEventListener('click', (e) => {
     e.preventDefault()

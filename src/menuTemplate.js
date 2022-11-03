@@ -6,12 +6,13 @@ const qiniuIsConfiged = settingsStore.size>0 ? ['accessKey', 'secretKey', 'bucke
 let enableAutoSync = settingsStore.get('enableAutoSync')
 
 let template = [{
-    label: '文件',
+    label: '文件(F)',
     submenu: [{
         label: '新建',
         accelerator: 'CmdOrCtrl+N',
         click: (menuItem, browserWindow, event) => {
-            browserWindow.webContents.send('create-new-file')
+            // browserWindow.webContents.send('create-new-file')
+            ipcMain.emit('open-file-window')
         }
     },{
         label: '保存',
@@ -34,7 +35,7 @@ let template = [{
     }]
 },
     {
-        label: '编辑',
+        label: '编辑(E)',
         submenu: [
             {
                 label: '撤销',
@@ -66,10 +67,10 @@ let template = [{
         ]
     },
     {
-        label: '云同步',
+        label: "云同步(C)",
         submenu: [{
             label: '设置',
-            accelerator: 'CmdOrCtrl+,',
+            accelerator: 'Alt+CmdOrCtrl+S',
             click: () => {
                 ipcMain.emit('open-settings-window')
             }
@@ -99,7 +100,7 @@ let template = [{
         }]
     },
     {
-        label: '视图',
+        label: '视图(V)',
         submenu: [
             {
                 label: '刷新当前页面',
@@ -122,23 +123,23 @@ let template = [{
                         focusedWindow.setFullScreen(!focusedWindow.isFullScreen());
                 }
             },
-            {
-                label: '切换开发者工具',
-                accelerator: (function() {
-                    if (process.platform === 'darwin')
-                        return 'Alt+Command+I';
-                    else
-                        return 'Ctrl+Shift+I';
-                })(),
-                click: (item, focusedWindow) => {
-                    if (focusedWindow)
-                        focusedWindow.toggleDevTools();
-                }
-            },
+            // {
+            //     label: '切换开发者工具',
+            //     accelerator: (function() {
+            //         if (process.platform === 'darwin')
+            //             return 'Alt+Command+I';
+            //         else
+            //             return 'Ctrl+Shift+I';
+            //     })(),
+            //     click: (item, focusedWindow) => {
+            //         if (focusedWindow)
+            //             focusedWindow.toggleDevTools();
+            //     }
+            // },
         ]
     },
     {
-        label: '窗口',
+        label: '窗口(W)',
         role: 'window',
         submenu: [{
             label: '最小化',
@@ -151,7 +152,7 @@ let template = [{
         }]
     },
     {
-        label: '帮助',
+        label: '帮助(H)',
         role: 'help',
         submenu: [
             {
@@ -173,7 +174,7 @@ if (process.platform === 'darwin') {
             type: 'separator'
         }, {
             label: '设置',
-            accelerator: 'Command+,',
+            accelerator: 'Command+Alt+S',
             click: () => {
                 ipcMain.emit('open-settings-window')
             }
@@ -207,7 +208,7 @@ if (process.platform === 'darwin') {
 } else {
     template[0].submenu.push({
         label: '设置',
-        accelerator: 'Ctrl+,',
+        accelerator: 'Ctrl+Alt+S',
         click: () => {
             ipcMain.emit('open-settings-window')
         }

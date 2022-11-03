@@ -1,5 +1,4 @@
 const qiniu = require('qiniu')
-const axios = require('axios')
 const fs = require('fs')
 const http = require('http');
 class QiniuManager {

@@ -1,11 +1,13 @@
-import React, {useState, useEffect,useRef} from "react";
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import { faClose} from '@fortawesome/free-solid-svg-icons'
-import {faMarkdown} from "@fortawesome/free-brands-svg-icons";
+import React, {useState, useEffect} from "react";
+
 import PropTypes from 'prop-types'
 import useKeyPress from "../hooks/useKeyPress";
 import useContextMenu from '../hooks/useContextMenu'
 import { getParentNode } from '../utils/helper'
+import {FormControl, InputLabel, OutlinedInput} from "@mui/material";
+import CloseIcon from '@mui/icons-material/Close';
+
+
 
 const remote = window.require("@electron/remote")
 
@@ -14,15 +16,16 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
     const [value, setValue] = useState('')
     const enterPressed = useKeyPress(13)
     const escPressed = useKeyPress(27)
-    let node = useRef(null)
     const closeEdit = (editItem) => {
         //e.preventDefault()
         setEditStatus(false)
         setValue('')
         if (editItem.isNew){
             onFileDelete(editItem.id)
+            editItem.isNew = false
         }
     }
+
     const clickedItem = useContextMenu([
         {
             label: '打开',
@@ -36,6 +39,7 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
         {
             label: '重命名',
             click: () => {
+
                 const parentElement = getParentNode(clickedItem.current, 'file-item')
                 if (parentElement) {
                     const { id, title } = parentElement.dataset
@@ -74,6 +78,7 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
         if (escPressed && editStatus) {
             closeEdit(editItem)
         }
+
     },[enterPressed,editStatus,escPressed])
     useEffect(() => {
 
@@ -83,11 +88,6 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
             setValue(newFile.title)
         }
     },[files])
-    useEffect(() => {
-        if (editStatus) {
-            node.current.focus()
-        }
-    }, [editStatus])
     return (
         <ul className="list-group list-group-flush file-list">
             {
@@ -98,72 +98,27 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
                         data-title={file.title}
                     >
                         {
-                            ((file.id !== editStatus) && !file.isNew) &&
+                            ((file.id !== editStatus) ) &&
                             <>
-                                <span className="col-2"><FontAwesomeIcon title="文档" size={"lg"}
-                                                                         icon={faMarkdown}/></span>
-                                <span className="col-8" onClick={() => {
+                                <span className="col-10" onClick={() => {
                                     onFileClick(file.id)
                                 }}>{file.title}</span>
-                                {/*<button type="button" className="btn border-0 col-1" onClick={()=>{*/}
-                                {/*    startEdit(file.id,file.title)*/}
-                                {/*}}>*/}
-                                {/*    <FontAwesomeIcon title="编辑" icon={faEdit}/>*/}
-                                {/*</button>*/}
-                                {/*<button type="button" className="btn border-0 col-1" onClick={() => {*/}
-                                {/*    onFileDelete(file.id)*/}
-                                {/*}}>*/}
-                                {/*    <FontAwesomeIcon title="删除" icon={faTrash}/>*/}
-                                {/*</button>*/}
                             </>
                         }
-                        {
-                            ((file.id === editStatus) && !files.isNew ) &&
-                            <>
-                                <input
-                                    className="border-0 border-bottom border-3 border-grey rounded-0 col-10 "
+
+                        {(file.id === editStatus && !file.isNew ) &&
+                            <FormControl fullWidth >
+                                <InputLabel>请输入标题</InputLabel>
+                                <OutlinedInput
                                     value={value}
-                                    ref={node}
                                     onChange={(e) => {
                                         setValue(e.target.value)
                                     }}
+                                    endAdornment={<CloseIcon cursor={"pointer"} position="end"
+                                                             onClick={() => closeEdit(file)}>$</CloseIcon>}
+                                    label="请输入标题"
                                 />
-                                <button
-                                    type="button"
-                                    className="icon-button col-2 border-0 border-bottom border-3 bg-white border-danger"
-                                    onClick={()=>{closeEdit(file)}}
-                                >
-                                    <FontAwesomeIcon
-                                        title="关闭"
-                                        size="lg"
-                                        icon={faClose}
-                                    />
-                                </button>
-                            </>
-                        }
-                        {
-                            ((file.id !== editStatus) && file.isNew ) &&
-                            <>
-                                <input
-                                    className="border-0 border-bottom border-3 border-grey rounded-0 col-10 "
-                                    ref={node}
-                                    placeholder={"请输入文档标题"}
-                                    onChange={(e) => {
-                                        setValue(e.target.value)
-                                    }}
-                                />
-                                <button
-                                    type="button"
-                                    className="icon-button col-2 border-0 border-bottom border-3 bg-white border-danger"
-                                    onClick={()=>{closeEdit(file)}}
-                                >
-                                    <FontAwesomeIcon
-                                        title="关闭"
-                                        size="lg"
-                                        icon={faClose}
-                                    />
-                                </button>
-                            </>
+                            </FormControl>
                         }
                     </li>
                 ))

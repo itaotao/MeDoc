@@ -20,7 +20,7 @@ const objToArr = (obj) => {
 // 初始化remote
 require('@electron/remote/main').initialize()
 // const {ipcMain} = require("@electron/remote");
-let mainWindow,settingsWindow;
+let mainWindow,settingsWindow,fileWindow;
 const createManager = () => {
     const qiniuConfig = settingsStore.get('qiniuConfig')
     const accessKey = qiniuConfig['accessKey']
@@ -69,20 +69,51 @@ app.on('ready',() => {
             width: 700,
             height: 400,
             parent: mainWindow,
+            modal:true,
+            resizable:false,
+            minimizable:false,
             webPreferences : {
                 nodeIntegration:true,
                 enableRemoteModule:true,
                 contextIsolation:false
             }
         }
-        const settingsFileLocation = `file://${path.join(__dirname, '../settings/settings.html')}`
+        const settingsFileLocation = isDev ? `file://${path.join(__dirname, './settings/settings.html')}` : `file://${path.join(__dirname, '../settings/settings.html')}`
         settingsWindow = new AppWindow(settingsWindowConfig, settingsFileLocation)
         // settingsWindow.webContents.openDevTools({mode:'bottom'});
+
         settingsWindow.removeMenu()
         settingsWindow.on('closed', () => {
             settingsWindow = null
         })
         require('@electron/remote/main').enable(settingsWindow.webContents)
+    })
+    ipcMain.on('open-file-window', () => {
+        const fileWindowConfig = {
+            width: 370,
+            height: 200,
+            parent: mainWindow,
+            modal:true,
+            resizable:false,
+            minimizable:false,
+            webPreferences : {
+                nodeIntegration:true,
+                enableRemoteModule:true,
+                contextIsolation:false
+            }
+        }
+        const fileLocation = isDev ? `file://${path.join(__dirname, './settings/file.html')}` : `file://${path.join(__dirname, '../settings/file.html')}`
+        fileWindow = new AppWindow(fileWindowConfig, fileLocation)
+
+        fileWindow.removeMenu()
+        fileWindow.on('closed', () => {
+            fileWindow = null
+        })
+        require('@electron/remote/main').enable(fileWindow.webContents)
+    })
+    ipcMain.on('create-new-file', (event, title) => {
+
+        mainWindow.webContents.send('create-new-file',title.toString())
     })
     ipcMain.on('config-is-saved', () => {
         // watch out menu items index for mac and windows
@@ -134,7 +165,6 @@ app.on('ready',() => {
             return manager.uploadFile(`${file.title}.md`, file.path)
         })
         Promise.all(uploadPromiseArr).then(result => {
-            console.log(result)
             // show uploaded message
             dialog.showMessageBox({
                 type: 'info',
@@ -268,5 +298,9 @@ app.on('ready',() => {
 
     })
     require('@electron/remote/main').enable(mainWindow.webContents)
-
+    //禁止程序多开，此处需要单例锁的打开注释即可
+    const gotTheLock = app.requestSingleInstanceLock();
+    if (!gotTheLock) {
+        app.quit();
+    }
 })

@@ -16,6 +16,13 @@ import FileSearch from "./components/FileSearch"
 import FileList from "./components/FileList"
 import TabList from "./components/TabList"
 import useIpcRenderer from "./hooks/useIpcRenderer";
+import Box from '@mui/material/Box';
+import ChevronLeftIcon  from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon  from '@mui/icons-material/ChevronRight';
+import {Alert, Divider, Grid, Paper} from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+
+
 
 
 
@@ -54,12 +61,17 @@ function App() {
     const [openedFileIDs, setOpenFileIDs] = useState([])
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
     const [ searchedFiles, setSearchedFiles ] = useState([])
+    const [open, setOpen] = useState(false);
     const filesArr = objToArr(files)
     const savedLocation =  settingsStore.get('savedFileLocation') || remote.app.getPath('documents')
+    const handleDrawerToggle = ()=>{
+        setOpen(!open)
 
+    }
     const openedFiles = openedFileIDs.map(openID => {
         return files[openID]
     })
+
     const activeFile = files[activeFileID]
 
     let   fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr
@@ -93,7 +105,7 @@ function App() {
                                     type: 'info',
                                     title: '操作成功',
                                     message: '删除成功'
-                                }).then(r  =>{})
+                                }).then()
                             }
                         })
                     }
@@ -152,7 +164,6 @@ function App() {
         }
     }
     const updateFileName = (id, title, isNew) => {
-
         const newPath = isNew ? join(savedLocation, `${title}.md`)
             : join(dirname(files[id].path), `${title}.md`)
         const modifiedFile = { ...files[id], title, isNew: false, path: newPath}
@@ -161,6 +172,14 @@ function App() {
             fileHelper.writeFile(newPath,files[id].body).then( ()=>{
                 setFiles(newFiles)
                 saveFilesToStore(newFiles)
+                if (getAutoSync()) {
+                    ipcRenderer.send('upload-file', {key: `${title}.md`, path:newPath })
+                }
+                remote.dialog.showMessageBox({
+                    type: 'info',
+                    title: `创建文件`,
+                    message: `文件创建成功`,
+                }).then()
             })
         }else{
 
@@ -172,10 +191,14 @@ function App() {
                 }
                 setFiles( newFiles)
                 saveFilesToStore(newFiles)
+                remote.dialog.showMessageBox({
+                    type: 'info',
+                    title: `重命名`,
+                    message: `重命名文件成功`,
+                }).then()
                 }
             )
         }
-
     }
     const fileSearch = (keyword) =>{
         if (keyword){
@@ -185,17 +208,20 @@ function App() {
             setSearchedFiles([])
             setFiles(files)
         }
+        return true;
     }
-    const createNewFile = () => {
+   const  createNewFile = (title) => {
         const newId = uuidv4()
-        const newFile = {
+        const newFile= {
             id: newId,
-            title: '',
+            title: title,
             body: '## 请输入MarkDown文档',
             createAt: new Date().getTime(),
             isNew: true
         }
-        setFiles({...files,[newId]:newFile})
+       setFiles({...files,newId:newFile})
+       files[newId] = newFile
+       updateFileName(newId,title,true)
     }
     const onSaveClick = () => {
         const {title, path, body } = activeFile
@@ -289,12 +315,18 @@ function App() {
                 type: 'info',
                 title: '下载文件成功',
                 message: `成功下载${objToArr(arr).length}个文件`
-            })
+            }).then()
+        }else {
+            remote.dialog.showMessageBox({
+                type: 'info',
+                title: '下载文件提示',
+                message: `没有可供下载的文件`
+            }).then()
         }
 
     }
     useIpcRenderer({
-        'create-new-file' : createNewFile,
+        'create-new-file' : (message,title)=>(createNewFile(title)),
         'import-file'     : importFiles,
         'save-edit-file'  : onSaveClick,
         'active-file-uploaded': activeFileUploaded,
@@ -305,25 +337,38 @@ function App() {
         'loading-status': (message, status) => { setLoading(status) }
     })
 
-    return (<div className="App container-fluid px-0">
+    return ( <Grid container >
         { isLoading &&
             <Loader />
         }
-            <div className="row no-gutters">
-                <div className="col-3  left-panel ">
-                    <b><FileSearch title={"全部文档"}
-                                   onFileSearch={fileSearch}/>
-                    </b>
-                    <FileList files={fileListArr}
-                              onFileClick={fileClick}
-                              onFileDelete={deleteFile}
-                              onSaveEdit={updateFileName}
-                    />
-                </div>
-                <div className="col-9  right-panel">
-                    {!activeFile && <div className="start-page align-self-center">
-                        选择或者新建一个MarkDown文档
-                    </div>
+        <Grid item xs={3}  sx={{ ...(open && { display: 'none' }) }}>
+            <Box sx={{ flexGrow: 1 }}>
+                <FileSearch title={"全部文档"} onFileSearch={fileSearch}  />
+            </Box>
+            <Box>
+                <FileList files={fileListArr}
+                          onFileClick={fileClick}
+                          onFileDelete={deleteFile}
+                          onSaveEdit={updateFileName}
+                />
+            </Box>
+        </Grid>
+        <Divider  orientation="vertical" flexItem sx={{cursor:'pointer',height:'1000px'}}>
+            {activeFileID &&
+                <IconButton onClick={handleDrawerToggle}>
+            {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                </IconButton>
+            }
+        </Divider>
+                <Grid item xs={7.8}>
+                    {!activeFile &&
+                        <Box sx={{marginLeft:'100px',width:'100%',lineHeight:'700px', color:'grey',textAlign: 'center',fontSize:'50px'}}>
+                            <Paper elevation={5} square={true} sx={{color:'#ccc'}}>
+                                选择或者新建一个MarkDown文档
+                            </Paper>
+                        </Box>
+
+
 
                     }
                     {activeFile && <>
@@ -336,7 +381,7 @@ function App() {
                         />
                         <MdEditor
                             ref={mdEditor}
-                            style={{ height: '500px' }}
+                            style={{ height: '900px' }}
                             value={  activeFile.body }
                             placeholder= {'请使用 Markdown 格式书写 '}
                             view = {{ menu: true, md: true, html: false }}
@@ -344,13 +389,12 @@ function App() {
                             onChange={handleEditorChange}
                         />
                         { activeFile.isSynced &&
-                            <span className="sync-status">已同步，上次同步{timestampToString(activeFile.updatedAt)}</span>
+                            (<Alert severity="success">已同步，上次同步{timestampToString(activeFile.updatedAt)}</Alert>)
                         }
                     </>}
 
-                </div>
-            </div>
-        </div>);
+                </Grid>
+    </Grid>);
 }
 
 export default App;

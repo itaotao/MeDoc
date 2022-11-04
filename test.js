@@ -9,21 +9,21 @@ const fileStore = new Store({'name': 'Files Data'})
 const settingsStore = new Store({ 'name': 'Settings'})
 // 空间对应的机房
 const zone = 'as0';
-const localFile = "C:\\Users\\Administrator\\Documents\\测试下载功能.md";
-const key = '测试下载功能.md';
+const localFile = "C:\\Users\\Administrator\\Documents\\666.md";
+const key = '666.md';
 const manager =  new qiniuManager(accessKey,secretKey,'medocument',zone)
 
 const objToArr = (obj) => {
     return Object.keys(obj).map(key => obj[key])
 }
-console.log(join(__dirname, './settings/settings.html'))
+
 // const id = '00db5ee8-8e71-4686-9f89-dfaff72f0cc5'
 
 
-// manager.uploadFile(key, localFile).then( (data) => {
-//     console.log(data)
-//
-// })
+manager.uploadFile(key, localFile).then( (data) => {
+    console.log(data)
+
+})
 // manager.getBucketDomain().then( (data) => {
 //     console.log(data)
 // })

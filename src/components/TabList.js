@@ -1,46 +1,72 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import classNames from "classnames";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {faClose} from '@fortawesome/free-solid-svg-icons'
-import './TabList.scss'
-const TabList = ({files,activeId,unSaveIds,onTabClick,onCloseTab}) =>{
-    return (
-                <ul className="nav nav-pills tablist-component">
-                    { files.map( file => {
-                        const  withUnsavedMark = unSaveIds.includes(file.id)
-                        const fClassName = classNames({
-                                'nav-link': true,
-                                'active': file.id === String(activeId),
-                                'withUnsaved': withUnsavedMark,
-                        }
-                        )
-                        return (
-                            <li className="nav-item " key={file.id}>
-                                <a  className={fClassName} href="#"
-                                onClick={(e)=>{e.preventDefault();onTabClick(file.id)}}>{file.title}
-                                    <span className="ms-2 close-icon">
-                                        <FontAwesomeIcon
-                                        title="关闭"
-                                        icon={faClose}
-                                        onClick={(e)=>{e.stopPropagation();onCloseTab(file.id)}}
-                                    /></span>
-                                    { withUnsavedMark && <span className="rounded-circle ms-2 unsaved-icon"> </span>}
-                                </a>
-                            </li>
-                        )
-                    })
+import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import CloseIcon from '@mui/icons-material/Close';
+import CircleIcon from '@mui/icons-material/Circle';
 
-                    }
-                </ul>
+const TabList = ({files, activeId, unSaveIds, onTabClick, onCloseTab}) => {
+    return (
+        <Box>
+            <Tabs
+                value={activeId}
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
+            >
+                {files.map(file => {
+                    const withUnsavedMark = unSaveIds.includes(file.id)
+                    return (
+
+                        <Tab
+                            label={
+                                <Box sx={{fontWeight: 'bold', textTransform: 'none'}}>
+                                    {file.title}
+                                    {!withUnsavedMark &&
+                                        <Box
+                                            component="span"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onCloseTab(file.id)
+                                            }}
+                                        >
+                                            <CloseIcon sx={{
+                                                margin: "-5px 0px 0px 5px",
+                                                color: "#C0C0C0",
+                                                width: "13px",
+                                                height: "13px"
+                                            }}/>
+                                        </Box>}
+                                    {withUnsavedMark && <CircleIcon sx={{
+                                        margin: "-3px 0px 0px 5px",
+                                        color: "#d9534f",
+                                        width: "11px",
+                                        height: "11px"
+                                    }}/>}
+                                </Box>
+                            }
+                            key={file.id} value={file.id} onClick={(e) => {
+                            e.preventDefault();
+                            onTabClick(file.id)
+                        }}
+                        />
+
+
+                    )
+                })
+
+                }
+            </Tabs>
+        </Box>
     )
 
 }
 TabList.propTypes = {
-    files : PropTypes.array,
-   // activeId : PropTypes.string,
-    unSaveIds : PropTypes.array,
-    onTabClick : PropTypes.func,
+    files: PropTypes.array,
+    // activeId : PropTypes.string,
+    unSaveIds: PropTypes.array,
+    onTabClick: PropTypes.func,
     onCloseTab: PropTypes.func,
 }
 TabList.defaultProps = {

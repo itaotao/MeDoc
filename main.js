@@ -69,6 +69,7 @@ app.on('ready',() => {
             width: 700,
             height: 400,
             parent: mainWindow,
+            icon: path.join(__dirname,'./logo.png'),
             modal:true,
             resizable:false,
             minimizable:false,

@@ -9,18 +9,16 @@ Store.initRenderer()
 const settingsStore = new Store({ 'name': 'Settings'})
 const QiniuManager = require('./src/utils/QiniuManager')
 const {v4: uuidv4} = require("uuid");
+const http = require("http");
+const logger = require("electron-log");
 const fileStore = new Store({'name': 'Files Data'})
 const objToArr = (obj) => {
     return Object.keys(obj).map(key => obj[key])
 }
-// 热加载
-// try {
-//     require('electron-reloader')(module,{});
-// } catch (_) {}
 // 初始化remote
 require('@electron/remote/main').initialize()
 // const {ipcMain} = require("@electron/remote");
-let mainWindow,settingsWindow,fileWindow;
+let mainWindow,settingsWindow,fileWindow,downloadWindow;
 const createManager = () => {
     const qiniuConfig = settingsStore.get('qiniuConfig')
     const accessKey = qiniuConfig['accessKey']
@@ -30,6 +28,7 @@ const createManager = () => {
 }
 
 app.on('ready',() => {
+
 
     const mainWindowConfig = {
         width : 1024,
@@ -111,6 +110,72 @@ app.on('ready',() => {
             fileWindow = null
         })
         require('@electron/remote/main').enable(fileWindow.webContents)
+    })
+    ipcMain.on('download-newApp-window', (version,update_info,download_url) => {
+        const downWindowConfig = {
+            width: 500,
+            height: 500,
+            parent: mainWindow,
+            modal:true,
+            resizable:false,
+            minimizable:false,
+            webPreferences : {
+                nodeIntegration:true,
+                enableRemoteModule:true,
+                contextIsolation:false
+            }
+        }
+        const fileLocation = isDev ? `file://${path.join(__dirname, './settings/download.html')}` : `file://${path.join(__dirname, '../settings/download.html')}`
+        downloadWindow = new AppWindow(downWindowConfig, fileLocation)
+        if (isDev){
+            downloadWindow.webContents.openDevTools({mode:'bottom'});
+        }
+        logger.log(update_info)
+        downloadWindow.webContents.send('download-newApp-window',version,update_info,download_url)
+        downloadWindow.removeMenu()
+        downloadWindow.on('closed', () => {
+            downloadWindow = null
+        })
+        require('@electron/remote/main').enable(downloadWindow.webContents)
+
+    })
+    ipcMain.on('check-version', (event) => {
+
+        const url = 'http://medoc.w2ex.com/latest.json';
+        logger.log(url)
+        http.get(url, function(res) {
+            res.on("data",(data)=>{
+                const config = require("./package.json");
+                const remoteConfig = JSON.parse(data.toString())
+                if (remoteConfig.version > config.version ){
+                    console.log(process.platform)
+                    dialog.showMessageBox({
+                        type: 'info',
+                        title: '应用有新的版本',
+                        message: '发现应用新版本，是否现在下载？',
+                        buttons: ['是', '否']
+                    }).then(function (message){
+                        if (message.response === 0){
+                            console.log(remoteConfig.version)
+                            ipcMain.emit('download-newApp-window',remoteConfig.version,remoteConfig.update_info,remoteConfig.win32)
+                            setTimeout(()=>{
+                                downloadWindow.webContents.send('download-newApp-window',remoteConfig.version,remoteConfig.update_info,remoteConfig.win32)
+                            },2000)
+
+                        }
+                    })
+                }else{
+                    dialog.showMessageBox({
+                        type: 'info',
+                        title: '没有新的版本',
+                        message: '没有发现新的版本可供更新'
+                    }).then()
+                }
+            })
+        }).on('error', function(e) {
+            console.log("Got error: " + e.message);
+        });
+
     })
     ipcMain.on('create-new-file', (event, title) => {
 

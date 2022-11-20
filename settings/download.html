@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>下载应用</title>
+    <link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            height: 500px;
+            width: 100%;
+            text-align: center;
+            vertical-align:middle;
+            justify-content: center;
+        }
+        .container-fluid {
+            margin-top: 50px;
+            vertical-align: middle;
+        }
+        ul {
+            width: 100%;
+        }
+        ul li {
+            float: left;
+            text-align: left;
+        }
+        .progress{
+            display: none;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body >
+<!--应用下载中-->
+
+<div class="container-fluid">
+    <h1>V<span id="version"></span>更新说明</h1>
+    <ul class="list-group list-group-numbered">
+
+    </ul>
+    <div style="margin-top: 10px" class="download-info">
+      <button type="button" class="btn btn-success">立即下载</button>
+    </div>
+        <div class="progress progress-striped active">
+            <div id="progress-num" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0"
+                 aria-valuemin="0" aria-valuemax="100" style="width:10%">
+               0%
+            </div>
+        </div>
+</div>
+<script>
+    require('./download.js')
+</script>
+</body>
+</html>

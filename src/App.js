@@ -364,7 +364,7 @@ function App() {
                     {!activeFile &&
                         <Box sx={{marginLeft:'100px',width:'100%',lineHeight:'700px', color:'grey',textAlign: 'center',fontSize:'50px'}}>
                             <Paper elevation={5} square={true} sx={{color:'#ccc'}}>
-                                选择或者新建一个MarkDown文档
+                                   选择或者新建一个MarkDown文档
                             </Paper>
                         </Box>
 

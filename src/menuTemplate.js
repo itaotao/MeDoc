@@ -123,19 +123,19 @@ let template = [{
                         focusedWindow.setFullScreen(!focusedWindow.isFullScreen());
                 }
             },
-            // {
-            //     label: '切换开发者工具',
-            //     accelerator: (function() {
-            //         if (process.platform === 'darwin')
-            //             return 'Alt+Command+I';
-            //         else
-            //             return 'Ctrl+Shift+I';
-            //     })(),
-            //     click: (item, focusedWindow) => {
-            //         if (focusedWindow)
-            //             focusedWindow.toggleDevTools();
-            //     }
-            // },
+            {
+                label: '切换开发者工具',
+                accelerator: (function() {
+                    if (process.platform === 'darwin')
+                        return 'Alt+Command+I';
+                    else
+                        return 'Ctrl+Shift+I';
+                })(),
+                click: (item, focusedWindow) => {
+                    if (focusedWindow)
+                        focusedWindow.toggleDevTools();
+                }
+            },
         ]
     },
     {
@@ -159,6 +159,12 @@ let template = [{
                 label: '学习更多',
                 click: () => { shell.openExternal('http://electron.atom.io') }
             },
+            {
+                label: '检查更新',
+                click: () => {
+                    ipcMain.emit('check-version')
+                }
+            }
         ]
     },
 ]

@@ -1,13 +1,13 @@
 {
   "name": "me-doc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "main.js",
   "description": "Online Markdown Editor using Qiniu cloud service",
   "author": {
     "name": "itaotao",
     "email": "jia_bin@foxmail.com"
   },
-  "repository": "https://gitee.com/itaotao/MeDoc",
+  "repository": "https://github.com/itaotao/MeDoc",
   "private": true,
   "scripts": {
     "start": "react-scripts start",
@@ -19,7 +19,7 @@
     "dev": "concurrently \"wait-on http://localhost:3000/ && electron .\"  \"cross-env BROWSER=none npm start\"",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "release": "electron-builder",
+    "release": "cross-env GH_TOKEN=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 electron-builder",
     "prerelease": "npm run build && npm run buildMain",
     "prepack": "npm run build && npm run buildMain",
     "predist": "npm run build && npm run buildMain"
@@ -42,6 +42,9 @@
     "extraMetadata": {
       "main": "./build/main.js"
     },
+    "publish": [
+      "github"
+    ],
     "dmg": {
       "background": "assets/appdmg.png",
       "icon": "assets/icon.icns",
@@ -66,7 +69,7 @@
     },
     "mac": {
       "category": "public.app-category.productivity",
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
+      "artifactName": "${appId}-${version}-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -74,7 +77,7 @@
         "nsis"
       ],
       "icon": "assets/icon.ico",
-      "artifactName": "${productName}-Web-Setup-${version}.${ext}",
+      "artifactName": "${name}-Web-Setup-${version}.${ext}",
       "publisherName": "itaotao"
     },
     "linux": {
@@ -83,7 +86,7 @@
         "AppImage"
       ],
       "icon": "assets/icon@256x256.icns",
-      "artifactName": "${appId}-${version}.${ext}"
+      "artifactName": "${name}-${version}.${ext}"
     },
     "nsis": {
       "allowToChangeInstallationDirectory": true,
@@ -113,18 +116,21 @@
   "dependencies": {
     "@electron/remote": "^2.0.8",
     "bootstrap": "^5.2.1",
-    "electron-store": "^8.1.0"
+    "electron-store": "^8.1.0",
+    "electron-log": "^4.4.8",
+    "node-fetch": "^2.6.7",
+    "progress-stream": "^2.0.0"
   },
   "devDependencies": {
+    "@electron/remote": "^2.0.8",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
-    "@mui/icons-material": "^5.10.9",
-    "@mui/material": "^5.10.11",
-    "@electron/remote": "^2.0.8",
     "@fortawesome/fontawesome-svg-core": "^6.2.0",
     "@fortawesome/free-brands-svg-icons": "^6.2.0",
     "@fortawesome/free-solid-svg-icons": "^6.2.0",
     "@fortawesome/react-fontawesome": "^0.2.0",
+    "@mui/icons-material": "^5.10.9",
+    "@mui/material": "^5.10.11",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -138,6 +144,7 @@
     "electron-builder": "^23.6.0",
     "electron-is-dev": "^2.0.0",
     "electron-store": "^8.1.0",
+    "electron-updater": "^5.3.0",
     "marked": "^4.1.1",
     "node-sass": "^7.0.3",
     "nrm": "^1.2.5",

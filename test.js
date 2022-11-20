@@ -3,6 +3,7 @@ const {v4: uuidv4} = require("uuid");
 const {join} = require("path");
 
 const Store = require('electron-store')
+const path = require("path");
 const accessKey = 'ir9GbJotIaon4amS7RyuyTRdLIxuEydQFMxmEPEu';
 const secretKey = 'WYcWfJJB38O_WFpIYJMamgJVJNQfEWQWuLKbidlm';
 const fileStore = new Store({'name': 'Files Data'})
@@ -19,11 +20,23 @@ const objToArr = (obj) => {
 
 // const id = '00db5ee8-8e71-4686-9f89-dfaff72f0cc5'
 
+const url = 'https://seven-actions.oss-cn-shenzhen.aliyuncs.com/sa_rail_work_sheet_resource/b517de9a-2abc-11ea-8e3c-0242ac140007.mp4'
+const fileName = path.basename(url)
+console.log(fileName)
+const cp = require('child_process')
+let child = cp.spawn('f:/medoc.exe')
 
-manager.uploadFile(key, localFile).then( (data) => {
-    console.log(data)
+cp.exec('f:/medoc.exe', (err, stdout, stderr) => {
+
+    console.log(err, stdout, stderr)
 
 })
+// console.log(remote.app.getPath('documents'))
+// downloadFile(path.join(app.getPath('documents')))
+// manager.uploadFile(key, localFile).then( (data) => {
+//     console.log(data)
+//
+// })
 // manager.getBucketDomain().then( (data) => {
 //     console.log(data)
 // })

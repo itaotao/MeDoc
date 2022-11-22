@@ -24,9 +24,10 @@ const url = 'https://seven-actions.oss-cn-shenzhen.aliyuncs.com/sa_rail_work_she
 const fileName = path.basename(url)
 console.log(fileName)
 const cp = require('child_process')
-let child = cp.spawn('f:/medoc.exe')
+const fs = require("fs");
+cp.exec('chmod +x /Users/itaotao/Downloads/%E8%A7%85%E6%96%87%E6%A1%A3-1.0.0-x64.dmg')
 
-cp.exec('f:/medoc.exe', (err, stdout, stderr) => {
+cp.exec('/Users/itaotao/Downloads/%E8%A7%85%E6%96%87%E6%A1%A3-1.0.0-x64.dmg', (err, stdout, stderr) => {
 
     console.log(err, stdout, stderr)
 

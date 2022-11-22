@@ -89,36 +89,34 @@ app.on('ready',() => {
         require('@electron/remote/main').enable(settingsWindow.webContents)
     })
     ipcMain.on('open-file-window', () => {
-        const fileWindowConfig = {
-            width: 370,
-            height: 200,
-            parent: mainWindow,
-            modal:true,
-            resizable:false,
-            minimizable:false,
-            webPreferences : {
-                nodeIntegration:true,
-                enableRemoteModule:true,
-                contextIsolation:false
-            }
-        }
-        const fileLocation = isDev ? `file://${path.join(__dirname, './settings/file.html')}` : `file://${path.join(__dirname, '../settings/file.html')}`
-        fileWindow = new AppWindow(fileWindowConfig, fileLocation)
-
-        fileWindow.removeMenu()
-        fileWindow.on('closed', () => {
-            fileWindow = null
-        })
-        require('@electron/remote/main').enable(fileWindow.webContents)
+        // const fileWindowConfig = {
+        //     width: 370,
+        //     height: 200,
+        //     parent: mainWindow,
+        //     // modal:true,
+        //     // resizable:false,
+        //     // minimizable:false,
+        //     webPreferences : {
+        //         nodeIntegration:true,
+        //         enableRemoteModule:true,
+        //         contextIsolation:false
+        //     }
+        // }
+        // const fileLocation = isDev ? `file://${path.join(__dirname, './settings/file.html')}` : `file://${path.join(__dirname, '../settings/file.html')}`
+        // fileWindow = new AppWindow(fileWindowConfig, fileLocation)
+        //
+        // fileWindow.removeMenu()
+        // fileWindow.on('closed', () => {
+        //     fileWindow = null
+        // })
+        // require('@electron/remote/main').enable(fileWindow.webContents)
+        mainWindow.webContents.send('open-create-file-window')
     })
     ipcMain.on('download-newApp-window', (version,update_info,download_url) => {
         const downWindowConfig = {
             width: 500,
             height: 500,
             parent: mainWindow,
-            modal:true,
-            resizable:false,
-            minimizable:false,
             webPreferences : {
                 nodeIntegration:true,
                 enableRemoteModule:true,
@@ -157,10 +155,10 @@ app.on('ready',() => {
                     }).then(function (message){
                         if (message.response === 0){
                             console.log(remoteConfig.version)
-                            ipcMain.emit('download-newApp-window',remoteConfig.version,remoteConfig.update_info,remoteConfig.win32)
-                            setTimeout(()=>{
-                                downloadWindow.webContents.send('download-newApp-window',remoteConfig.version,remoteConfig.update_info,remoteConfig.win32)
-                            },2000)
+                            ipcMain.emit('download-newApp-window', remoteConfig.version, remoteConfig.update_info, remoteConfig[process.platform])
+                            setTimeout(() => {
+                                downloadWindow.webContents.send('download-newApp-window', remoteConfig.version, remoteConfig.update_info, remoteConfig[process.platform])
+                            }, 2000)
 
                         }
                     })

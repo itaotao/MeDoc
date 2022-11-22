@@ -19,7 +19,7 @@
     "dev": "concurrently \"wait-on http://localhost:3000/ && electron .\"  \"cross-env BROWSER=none npm start\"",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "release": "cross-env GH_TOKEN=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 electron-builder",
+    "release": "cross-env GH_TOKEN=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 electron-builder",
     "prerelease": "npm run build && npm run buildMain",
     "prepack": "npm run build && npm run buildMain",
     "predist": "npm run build && npm run buildMain"
@@ -69,7 +69,7 @@
     },
     "mac": {
       "category": "public.app-category.productivity",
-      "artifactName": "${appId}-${version}-${arch}.${ext}"
+      "artifactName": "${name}-${version}-${arch}.${ext}"
     },
     "win": {
       "target": [

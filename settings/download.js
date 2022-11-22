@@ -40,13 +40,26 @@ ipcRenderer.on('download-newApp-window',(event,version,info,url)=>{
         $('.download-info .btn').innerHTML = '点击安装'
         $(".progress").style.display = 'none'
         $('.download-info .btn').addEventListener('click',function (){
-            cp.exec(fileSavePath, (err, stdout, stderr) => {
+            if (process.platform === 'win32') {
+                cp.exec(fileSavePath, (err, stdout, stderr) => {
 
-                log.error(err, stdout, stderr)
+                    log.error(err, stdout, stderr)
 
-            })
+                })
+            }
+            if (process.platform === 'darwin') {
+                cp.exec('open ' + fileSavePath, (err, stdout, stderr) => {
+
+                    log.error(err, stdout, stderr)
+
+                })
+            }
+            if (process.platform === 'linux') {
+
+            }
+
         })
-
+        remote.getCurrentWindow().close()
         log.info('文件下载完成:', fileSavePath);
     });
 //请求文件

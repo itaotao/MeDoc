@@ -18,8 +18,8 @@ import TabList from "./components/TabList"
 import useIpcRenderer from "./hooks/useIpcRenderer";
 import Box from '@mui/material/Box';
 import ChevronLeftIcon  from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon  from '@mui/icons-material/ChevronRight';
-import {Alert, Divider, Grid, Paper} from "@mui/material";
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import {Alert, Divider, Grid, Input, Modal, Paper, Button} from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 
 
@@ -56,25 +56,39 @@ const saveFilesToStore = (files) => {
 function App() {
     const mdEditor = React.useRef(null);
     const [files, setFiles] = useState(fileStore.get('files') || {})
-    const [ isLoading, setLoading ] = useState(false)
+    const [isLoading, setLoading] = useState(false)
     const [activeFileID, setActiveFileID] = useState('')
     const [openedFileIDs, setOpenFileIDs] = useState([])
     const [unsavedFileIDs, setUnsavedFileIDs] = useState([])
-    const [ searchedFiles, setSearchedFiles ] = useState([])
+    const [searchedFiles, setSearchedFiles] = useState([])
     const [open, setOpen] = useState(false);
+    const [title, setTitle] = useState('请输入文档标题');
+    const [openModal, setOpenModal] = useState(false);
+    const handleClose = () => setOpenModal(false);
     const filesArr = objToArr(files)
-    const savedLocation =  settingsStore.get('savedFileLocation') || remote.app.getPath('documents')
-    const handleDrawerToggle = ()=>{
+    const savedLocation = settingsStore.get('savedFileLocation') || remote.app.getPath('documents')
+    const handleDrawerToggle = () => {
         setOpen(!open)
 
     }
+    const style = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 400,
+        bgcolor: 'background.paper',
+        border: '2px solid #000',
+        boxShadow: 24,
+        p: 4,
+    };
     const openedFiles = openedFileIDs.map(openID => {
         return files[openID]
     })
 
     const activeFile = files[activeFileID]
 
-    let   fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr
+    let fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr
 
     const fileClick = (fileID) => {
 
@@ -316,7 +330,7 @@ function App() {
                 title: '下载文件成功',
                 message: `成功下载${objToArr(arr).length}个文件`
             }).then()
-        }else {
+        } else {
             remote.dialog.showMessageBox({
                 type: 'info',
                 title: '下载文件提示',
@@ -325,25 +339,55 @@ function App() {
         }
 
     }
+    const openFileWindow = () => {
+        setOpenModal(true)
+    }
     useIpcRenderer({
-        'create-new-file' : (message,title)=>(createNewFile(title)),
-        'import-file'     : importFiles,
-        'save-edit-file'  : onSaveClick,
+        'create-new-file': (message, title) => (createNewFile(title)),
+        'open-create-file-window': openFileWindow,
+        'import-file': importFiles,
+        'save-edit-file': onSaveClick,
         'active-file-uploaded': activeFileUploaded,
-        'file-downloaded' : activeFileDownloaded,
-        'download-all-file' : allFileDownload,
-        'files-uploaded'  : filesUploaded,
-        'delete-file'     : deleteFile,
-        'loading-status': (message, status) => { setLoading(status) }
+        'file-downloaded': activeFileDownloaded,
+        'download-all-file': allFileDownload,
+        'files-uploaded': filesUploaded,
+        'delete-file': deleteFile,
+        'open-file-window': openFileWindow,
+        'loading-status': (message, status) => {
+            setLoading(status)
+        }
     })
 
-    return ( <Grid container >
-        { isLoading &&
-            <Loader />
+    return (<Grid container>
+        {isLoading &&
+            <Loader/>
         }
-        <Grid item xs={3}  sx={{ ...(open && { display: 'none' }) }}>
-            <Box sx={{ flexGrow: 1 }}>
-                <FileSearch title={"全部文档"} onFileSearch={fileSearch}  />
+        {
+            openModal &&
+            (
+
+                <div>
+                    <Modal
+                        onClose={handleClose}
+                        aria-labelledby="modal-modal-title"
+                        aria-describedby="modal-modal-description"
+                        open={openModal}>
+                        <Box sx={style}>
+                            <Input placeholder="请输入文档标题" onChange={(e) => {
+                                setTitle(e.target.value)
+                            }}/>
+                            <Button variant="contained" sx={{marginLeft: '50px'}} onClick={() => {
+                                createNewFile(title);
+                                handleClose()
+                            }}>保存</Button>
+                        </Box>
+                    </Modal>
+                </div>
+            )
+        }
+        <Grid item xs={3} sx={{...(open && {display: 'none'})}}>
+            <Box sx={{flexGrow: 1}}>
+                <FileSearch title={"全部文档"} onFileSearch={fileSearch}/>
             </Box>
             <Box>
                 <FileList files={fileListArr}
@@ -395,6 +439,7 @@ function App() {
 
                 </Grid>
     </Grid>);
+
 }
 
 export default App;

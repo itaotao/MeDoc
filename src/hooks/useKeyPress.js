@@ -4,6 +4,7 @@ const useKeyPress = (targetKeyCode) => {
     const [keyPressed, setKeyPressed] = useState(false)
 
     const keyDownHandler = ({ keyCode }) => {
+        setKeyPressed(false)
         if(keyCode === targetKeyCode) {
             setKeyPressed(true)
         }

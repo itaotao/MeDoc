@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState,} from "react";
+import React, {useEffect,  useState,} from "react";
 import PropTypes from 'prop-types'
 import useKeyPress from "../hooks/useKeyPress";
 import useIpcRenderer from "../hooks/useIpcRenderer";

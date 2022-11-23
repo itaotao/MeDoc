@@ -16,6 +16,7 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
     const [value, setValue] = useState('')
     const enterPressed = useKeyPress(13)
     const escPressed = useKeyPress(27)
+    console.log('first:'+enterPressed)
     const closeEdit = (editItem) => {
         //e.preventDefault()
         setEditStatus(false)
@@ -45,6 +46,7 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
                     const { id, title } = parentElement.dataset
                     setEditStatus(id)
                     setValue(title)
+                    console.log(editStatus)
                 }
             }
         },
@@ -68,26 +70,28 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
         },
     ], '.file-list', [files])
     useEffect(() => {
-        const editItem = files.find(file => file.id === editStatus)
+            const editItem = files.find(file => file.id === editStatus)
+            console.log(editStatus)
+            console.log('press enter:'+enterPressed)
+            if (enterPressed  && editStatus && value.trim() !== '' && value !== editItem.title) {
+                console.log(value)
+                onSaveEdit(editItem.id, value,editItem.isNew)
+                setEditStatus(false)
+                setValue('')
+            }
+            if (escPressed && editStatus) {
+                closeEdit(editItem)
+            }
+    },[enterPressed,escPressed,editStatus])
+    // useEffect(() => {
+    //
+    //     const newFile = files.find(file=>file.isNew)
+    //     if(newFile){
+    //         setEditStatus(newFile.id)
+    //         setValue(newFile.title)
+    //     }
+    // },[files])
 
-        if (enterPressed && editStatus && value.trim() !== '') {
-            onSaveEdit(editItem.id, value,editItem.isNew)
-            setEditStatus(false)
-            setValue('')
-        }
-        if (escPressed && editStatus) {
-            closeEdit(editItem)
-        }
-
-    },[enterPressed,editStatus,escPressed])
-    useEffect(() => {
-
-        const newFile = files.find(file=>file.isNew)
-        if(newFile){
-            setEditStatus(newFile.id)
-            setValue(newFile.title)
-        }
-    },[files])
     return (
         <ul className="list-group list-group-flush file-list">
             {
@@ -106,7 +110,7 @@ const FileList = ({files, onFileClick, onSaveEdit, onFileDelete}) => {
                             </>
                         }
 
-                        {(file.id === editStatus && !file.isNew ) &&
+                        {(file.id === editStatus ) &&
                             <FormControl fullWidth >
                                 <InputLabel>请输入标题</InputLabel>
                                 <OutlinedInput
